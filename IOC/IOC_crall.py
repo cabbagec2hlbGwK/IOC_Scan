@@ -1,5 +1,5 @@
 import importlib
-import os, requests
+import os, requests, socks
 import concurrent.futures
 import stem.process
 from stem.control import Controller
@@ -10,6 +10,8 @@ from .search import register
 
 
 class ioc_crawll:
+    PORT = "9051"
+
     def __init__(self) -> None:
         # importing search modules
         self.search_engines = self.load_search_modules()
@@ -95,3 +97,15 @@ class ioc_crawll:
         except Exception as e:
             print("Error: {}".format(e))
             return None
+
+    def tor_req(self):
+        proxy_ip = "127.0.0.1"  # Tor proxy IP address
+        proxy_port = 9050  # Tor proxy port
+
+        # Create a session and set the proxy
+        session = requests.session()
+        session.proxies = {
+            "http": f"socks5://{proxy_ip}:{proxy_port}",
+            "https": f"socks5://{proxy_ip}:{proxy_port}",
+        }
+        return session

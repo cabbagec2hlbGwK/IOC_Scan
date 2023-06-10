@@ -1,8 +1,12 @@
-import requests
+import requests, re
 
 
 def search(IOC, query):
     url = f"https://ahmia.fi/search/?q={query.replace(' ','+')}"
+    MAX_RESULTS = 10
+    # re.compile()
+    session = IOC.tor_req()
+    print(session)
 
     headers = {
         "Host": "ahmia.fi",
@@ -22,7 +26,7 @@ def search(IOC, query):
         "Connection": "close",
     }
 
-    response = requests.get(url, headers=headers, verify=False)
+    response = session.get(url, headers=headers)
 
     print(response.text)
 
@@ -31,4 +35,5 @@ def string():
     return "ahmia"
 
 
-search("a", "card")
+if __name__ == "__main__":
+    search("a", "card")
