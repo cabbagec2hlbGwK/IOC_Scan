@@ -10,15 +10,15 @@ from .search import register
 
 
 class ioc_crawll:
-    PORT = "9051"
-
     def __init__(self) -> None:
         # importing search modules
         self.search_engines = self.load_search_modules()
+        self.port = "9051"
         # starting tor proxy
-        # self.torProcess = self.tor_proxy()
-        # self.torProcess.kill()
-        # print(self.torProcess)
+        self.torProcess = self.tor_proxy()
+
+    def __del__(self):
+        self.torProcess.kill()
 
     def load_search_modules(self):
         search_modules = []
@@ -38,7 +38,7 @@ class ioc_crawll:
 
         return search_modules
 
-    def search_all(self, query) -> list():
+    def search_all(self, query):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = []
             for engine in self.search_engines:
@@ -50,7 +50,6 @@ class ioc_crawll:
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
                 results.append(result)
-            print(results)
             return results
 
     def search(self, query, searchEngine=""):
@@ -66,13 +65,13 @@ class ioc_crawll:
                         print("the engine is not registered yet")
                 else:
                     pass
-            return results
+
+        return results
 
     def tor_proxy(self):
-        self.torProxy = {"http": "socks5://localhost:9050"}
         tor_process = stem.process.launch_tor_with_config(
             config={
-                "SocksPort": str(9051),
+                "SocksPort": self.port,
                 # "ExitNodes": "{US}",
             },
             init_msg_handler=self.print_bootstrap_lines,
@@ -100,7 +99,7 @@ class ioc_crawll:
 
     def tor_req(self):
         proxy_ip = "127.0.0.1"  # Tor proxy IP address
-        proxy_port = 9050  # Tor proxy port
+        proxy_port = self.port  # Tor proxy port
 
         # Create a session and set the proxy
         session = requests.session()

@@ -2,11 +2,9 @@ import requests, re
 
 
 def search(IOC, query):
-    url = f"https://ahmia.fi/search/?q={query.replace(' ','+')}"
+    url = f"https://ahmia.fi/search/?q={query.replace(' ','+')}&d=7"
     MAX_RESULTS = 10
-    # re.compile()
     session = IOC.tor_req()
-    print(session)
 
     headers = {
         "Host": "ahmia.fi",
@@ -27,8 +25,9 @@ def search(IOC, query):
     }
 
     response = session.get(url, headers=headers)
-
-    print(response.text)
+    pattern = re.compile(r"<cite>(.*?)</cite>")
+    matches = pattern.findall(response.text)
+    return matches[:MAX_RESULTS]
 
 
 def string():
