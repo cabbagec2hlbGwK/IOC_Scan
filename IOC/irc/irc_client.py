@@ -1,5 +1,6 @@
 from getname import random_name
 import irc.bot
+import asyncio
 
 
 class Irc_bot(irc.bot.SingleServerIRCBot):
@@ -38,8 +39,14 @@ class Irc_bot(irc.bot.SingleServerIRCBot):
 
 
 def main():
+    # ?USAGE irc_bot("server",PORT, CHANNEL,<nick,realname>)
     bot = Irc_bot("192.168.56.107", 6667, "#general")
-    bot.start()
+    # bot.start()
+    task = []
+    for a in range(10):
+        task.append(Irc_bot("192.168.56.107", 6667, "#general"))
+    for a in task:
+        a.start()
 
 
 if __name__ == "__main__":
