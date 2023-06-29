@@ -1,7 +1,6 @@
 from getname import random_name
 import irc.bot
-import threading, itertools
-import multiprocessing as mp
+import asyncio
 
 
 class Irc_bot(irc.bot.SingleServerIRCBot):
@@ -19,8 +18,15 @@ class Irc_bot(irc.bot.SingleServerIRCBot):
             self, [(self.server, self.port)], self.nick, self.realName
         )
 
+    def on_nicknameinuse(self, c, e):
+        c.nick(random_name("cat") + "_")
+
     def on_welcome(self, connection, event):
-        # connection.list()
+        connection.join(self.channel)
+
+    def _on_kick(self, connection, event):
+        self.nick = random_name("cat")
+        connection.nick(self.nick)
         connection.join(self.channel)
 
     def on_list(self, connection, event):
@@ -39,10 +45,17 @@ class Irc_bot(irc.bot.SingleServerIRCBot):
         print(f"{sender} said in {channel}: {message}")
 
 
-def main():
-    bot1 = Irc_bot("192.168.56.107", 6667, "#general", nick="test")
-    bot1.start()
+def reconn():
+    print("-----------------")
+
+
+async def main():
+    bot1 = Irc_bot("192.168.56.107", 6667, "#general")
+    bot2 = Irc_bot("192.168.56.107", 6667, "#general")
+    bot4 = Irc_bot("192.168.56.107", 6668, "#general")
+    tasks = await asyncio.gather(bot1.start(), bot2.start(), bot4.start())
+    await bot1.start()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

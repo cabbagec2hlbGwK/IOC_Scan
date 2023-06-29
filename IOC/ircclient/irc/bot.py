@@ -199,6 +199,7 @@ class SingleServerIRCBot(irc.client.SimpleIRCClient):
             )
 
     def _on_disconnect(self, connection, event):
+        print(event)
         self.channels = IRCDict()
         self.recon.run(self)
 
@@ -343,10 +344,10 @@ class SingleServerIRCBot(irc.client.SimpleIRCClient):
     def on_dccchat(self, connection, event):
         pass
 
-    def start(self):
+    async def start(self):
         """Start the bot."""
         self._connect()
-        super().start()
+        await super().start()
 
 
 class Channel:

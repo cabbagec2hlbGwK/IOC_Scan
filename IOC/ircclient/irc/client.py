@@ -809,7 +809,7 @@ class Reactor:
                 if conn is not None and conn.socket is not None
             ]
 
-    def process_once(self, timeout=0):
+    async def process_once(self, timeout=0.2):
         """Process data from connections once.
 
         Arguments:
@@ -826,28 +826,41 @@ class Reactor:
         if sockets:
             in_, out, err = select.select(sockets, [], [], timeout)
             self.process_data(in_)
+            await asyncio.sleep(timeout)
         else:
-            time.sleep(timeout)
+            await asyncio.sleep(timeout)
         self.process_timeout()
 
     async def acwait(self, timeout):
         await asyncio.sleep(timeout)
 
-    def process_forever(self, timeout=0.2):
-        """Run an infinite loop, processing data from connections.
+    # async def process_forever(self, timeout=0.2):
+    #     """Run an infinite loop, processing data from connections.
 
-        This method repeatedly calls process_once.
+    #     This method repeatedly calls process_once.
+
+    #     Arguments:
+
+    #         timeout -- Parameter to pass to process_once.
+    #     """
+    #     # This loop should specifically *not* be mutex-locked.
+    #     # Otherwise no other thread would ever be able to change
+    #     # the shared state of a Reactor object running this function.
+    #     log.debug("process_forever(timeout=%s)", timeout)
+    #     one = functools.partial(self.process_once, timeout=timeout)
+    #     consume(repeatfunc(one))
+
+    async def process_forever(self, timeout=0.2):
+        """Run an infinite loop, processing data from connections asynchronously.
+
+        This method repeatedly calls process_once asynchronously.
 
         Arguments:
-
             timeout -- Parameter to pass to process_once.
         """
-        # This loop should specifically *not* be mutex-locked.
-        # Otherwise no other thread would ever be able to change
-        # the shared state of a Reactor object running this function.
         log.debug("process_forever(timeout=%s)", timeout)
-        one = functools.partial(self.process_once, timeout=timeout)
-        consume(repeatfunc(one))
+        while True:
+            await self.process_once(timeout=timeout)
 
     def disconnect_all(self, message=""):
         """Disconnects all connections."""
@@ -1201,9 +1214,9 @@ class SimpleIRCClient:
         warnings.warn("Use self.dcc(type).listen()", DeprecationWarning)
         return self.dcc(dcctype).listen()
 
-    def start(self):
+    async def start(self):
         """Start the IRC client."""
-        self.reactor.process_forever(timeout=1)
+        await self.reactor.process_forever(timeout=2)
 
 
 class Event:
