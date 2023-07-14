@@ -4,21 +4,81 @@ import concurrent.futures
 import stem.process
 from stem.control import Controller
 from stem.util import term
+import psycopg2
 
 
 from .search import register
 
 
+# Main class declaration
 class ioc_crawll:
-    def __init__(self) -> None:
+    def __init__(self, host, port, user, password) -> None:
         # importing search modules
-        self.search_engines = self.load_search_modules()
-        self.port = "9051"
+        # self.search_engines = self.load_search_modules()
         # starting tor proxy
-        self.torProcess = self.tor_proxy()
+        # self.port = "9051"
+        # self.torProcess = self.tor_proxy()
+        self.cur = self.initDatabase(host, port, user, password)
 
     def __del__(self):
-        self.torProcess.kill()
+        pass
+        # self.torProcess.kill()
+
+    # table defination
+    def initTabel(self, cur):
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS website(
+                    id SERIAL PRIMARY KEY,
+                    url VARCHAR(255) NOT NULL,
+                    dir VARCHAR(255) DEFAULT 'NULL',
+                    status varchar(10) DEFAULT 'ACTIVE')"""
+        )
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS keywords(
+                    id SERIAL PRIMARY KEY,
+                    word TEXT,
+                    status varchar(10) DEFAULT 'ACTIVE')"""
+        )
+        # cur.execute("""""")
+
+    # setting up the database connection and creating the neccessart table and database
+    def initDatabase(self, host, port, user, password):
+        print("setting up the database-----------------------------------")
+        self.DATABASE = "ioc"
+
+        try:
+            self.conn = psycopg2.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=self.DATABASE,
+            )
+            cur = self.conn.cursor()
+            self.conn.autocommit = True
+            self.initTabel(cur)
+            return cur
+        except psycopg2.OperationalError:
+            # Handeling if the database is not created
+            print("creating database")
+            conn = psycopg2.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+            )
+            cur = conn.cursor()
+            conn.autocommit = True
+            cur.execute(f"CREATE DATABASE {self.DATABASE}")
+            cur.close()
+            conn.close()
+            cur = self.initDatabase(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+            )
+        return cur
 
     def load_search_modules(self):
         search_modules = []
@@ -67,6 +127,12 @@ class ioc_crawll:
                     pass
 
         return results
+
+    def registerKeyword(self, keyword):
+        pass
+
+    def registerSite(self, site):
+        pass
 
     def tor_proxy(self):
         tor_process = stem.process.launch_tor_with_config(

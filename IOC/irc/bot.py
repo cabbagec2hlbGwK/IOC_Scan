@@ -16,8 +16,8 @@ import asyncio
 
 import more_itertools
 
-import irc.client
-import irc.modes
+import IOC.irc.client
+import IOC.irc.modes
 from .dict import IRCDict
 
 
@@ -118,7 +118,7 @@ class ExponentialBackoff(ReconnectStrategy):
 missing = object()
 
 
-class SingleServerIRCBot(irc.client.SimpleIRCClient):
+class SingleServerIRCBot(IOC.irc.client.SimpleIRCClient):
     r"""A single-server IRC bot class.
 
     The bot tries to reconnect if it is disconnected.

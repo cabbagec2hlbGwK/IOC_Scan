@@ -1,10 +1,10 @@
 from getname import random_name
-import irc.bot
+from IOC.irc import bot
 import asyncio
 
 
-class Irc_bot(irc.bot.SingleServerIRCBot):
-    def __init__(self, server, port, channel, nick=None, realName=None):
+class Irc_bot(bot.SingleServerIRCBot):
+    def __init__(self, server, port, channel, nick=None, realName=None, proxy=None):
         if not nick:
             nick = random_name("cat")
         if not realName:
@@ -14,9 +14,12 @@ class Irc_bot(irc.bot.SingleServerIRCBot):
         self.nick = nick
         self.realName = realName
         self.port = port
-        irc.bot.SingleServerIRCBot.__init__(
-            self, [(self.server, self.port)], self.nick, self.realName
-        )
+        self.proxy = proxy
+        if not proxy:
+            connection = (self.server, self.port)
+        else:
+            connection = (self.server, self.port, self.proxy)
+        bot.SingleServerIRCBot.__init__(self, [connection], self.nick, self.realName)
 
     def on_nicknameinuse(self, c, e):
         c.nick(random_name("cat") + "_")
@@ -45,16 +48,12 @@ class Irc_bot(irc.bot.SingleServerIRCBot):
         print(f"{sender} said in {channel}: {message}")
 
 
-def reconn():
-    print("-----------------")
-
-
-async def main():
-    bot1 = Irc_bot("192.168.56.107", 6667, "#general")
-    bot2 = Irc_bot("192.168.56.107", 6667, "#general")
-    bot4 = Irc_bot("192.168.56.107", 6668, "#general")
-    tasks = await asyncio.gather(bot1.start(), bot2.start(), bot4.start())
-    await bot1.start()
+async def main(lists):
+    bots = []
+    for irc in lists:
+        bots.append(Irc_bot(irc["server"], irc["port"], irc["channel"]))
+    bot_tasks = [b.start() for b in bots]
+    await asyncio.gather(*bot_tasks)
 
 
 if __name__ == "__main__":
