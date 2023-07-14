@@ -14,15 +14,14 @@ from .search import register
 class ioc_crawll:
     def __init__(self, host, port, user, password) -> None:
         # importing search modules
-        # self.search_engines = self.load_search_modules()
+        self.search_engines = self.load_search_modules()
         # starting tor proxy
-        # self.port = "9051"
-        # self.torProcess = self.tor_proxy()
+        self.port = "9051"
+        self.torProcess = self.tor_proxy()
         self.cur = self.initDatabase(host, port, user, password)
 
     def __del__(self):
-        pass
-        # self.torProcess.kill()
+        self.torProcess.kill()
 
     # table defination
     def initTabel(self, cur):

@@ -20,6 +20,17 @@ async def ircRunner():
     pass
 
 
+app.route("/search")
+
+
+@app.route("/search")
+def search():
+    if "q" not in request.args:
+        return json.dumps({"message": "pass a string"})
+    results = IOC.search(request.args["q"])
+    return json.dumps(results)
+
+
 @app.route("/irc/run")
 def run():
     bot1 = Irc_bot("192.168.56.107", 6667, "#general")
