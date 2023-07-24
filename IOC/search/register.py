@@ -1,1 +1,1 @@
-registered_search_engine = ["ahmia", "torch"]
+registered_search_engine = ["ahmia", "torch", "regpages", "haystack"]

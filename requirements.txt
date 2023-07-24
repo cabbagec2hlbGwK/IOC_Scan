@@ -8,3 +8,4 @@ jaraco.functools==3.7.0
 jaraco.collections==4.2.0
 tempora==5.3.0
 flask==2.3.2
+beautifulsoup4==4.11.1

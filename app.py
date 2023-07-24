@@ -56,7 +56,6 @@ def deepSearch(query):
     for set in resultSet:
         if not set:
             continue
-        print(set[0])
         if not set[0]:
             print("nothing")
             continue
@@ -80,6 +79,13 @@ def search():
     if "q" not in request.args:
         return json.dumps({"message": "pass a string"})
     results = deepSearch(request.args["q"])
+    if not results:
+        return json.dumps(
+            {
+                "message": "No results found",
+                "searched links": [IOC.search(request.args["q"])],
+            }
+        )
     return json.dumps(results)
 
 

@@ -9,9 +9,13 @@ def search(IOC, query):
     parameters = ""
     for word in query.replace(" ", "+").split("+"):
         parameters = parameters + f"P=ZB{word}%09ZF{word}%09ZS{word}%09Z{word}"
-    source = session.get(
-        "http://xmh57jrknzkhv6y3ls3ubitzfqnkrwxhopf5aygthi7d6rplyvk3noyd.onion/cgi-bin/omega/omega"
-    )
+    try:
+        source = session.get(
+            "http://xmh57jrknzkhv6y3ls3ubitzfqnkrwxhopf5aygthi7d6rplyvk3noyd.onion/cgi-bin/omega/omega"
+        )
+    except:
+        print("TORCH is OFFLINE")
+        return
     soup = BeautifulSoup(source.text, "html.parser")
     val = soup.find("input", {"id": "tkn"}).get("value").strip()
     rest = f"DB=default&xFILTERS=.%7E%7E&tkn={val}"
