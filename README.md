@@ -18,12 +18,12 @@ This is a basic framework to set up a deep web scanning and monitoring solution.
     The API has the following endpoints:
     
     - `/search`: Use this endpoint to search for keywords.
-    - `/irc/run`: This endpoint is a work in progress and will be used to start an IRC scanner.
+    - `/irc/run`: This endpoint is a work in progress and will be used to start an IRC scanner. #INPROGRESS
     - `/site/list`: Lists all the registered sites.
     - `/site/register`: A POST method endpoint to register a site. Use the following `curl` command to register a site:
         
         ```
-        curl.exe -X POST -d 'url=https://test.com' <http://127.0.0.1:5000/site/register>
+        curl.exe -X POST -d 'url=<https://test.com>' http://127.0.0.1:5000/site/register
         
         ```
         
