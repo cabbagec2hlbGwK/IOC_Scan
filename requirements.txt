@@ -1,3 +1,10 @@
 getname==0.1.1
 requests==2.28.1
 stem==1.8.1
+psycopg2==2.9.6
+more_itertools==9.1.0
+jaraco.stream==3.0.3
+jaraco.functools==3.7.0
+jaraco.collections==4.2.0
+tempora==5.3.0
+flask==2.3.2

@@ -1,5 +1,5 @@
 import importlib
-import os, requests, socks
+import os, requests
 import concurrent.futures
 import stem.process
 from stem.control import Controller
@@ -114,7 +114,8 @@ class ioc_crawll:
     def search(self, query, searchEngine=""):
         results = []
         if not searchEngine:
-            results.append(self.search_all(query))
+            results = self.search_all(query)
+            # results.append(self.search_all(query))
         else:
             for engine in self.search_engines:
                 if engine.string() == searchEngine:
@@ -168,8 +169,10 @@ class ioc_crawll:
 
         # Create a session and set the proxy
         session = requests.session()
-        session.proxies = {
-            "http": f"socks5://{proxy_ip}:{proxy_port}",
-            "https": f"socks5://{proxy_ip}:{proxy_port}",
-        }
+        session.proxies.update(
+            {
+                "http": f"socks5h://{proxy_ip}:{proxy_port}",
+                "https": f"socks5h://{proxy_ip}:{proxy_port}",
+            }
+        )
         return session

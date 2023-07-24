@@ -1,8 +1,9 @@
 from IOC.IOC_crall import ioc_crawll
 from IOC.ircclient.irc_client import Irc_bot
 from flask import Flask
-import json, asyncio
+import json, asyncio, requests, re
 from flask import request
+import concurrent.futures
 
 app = Flask(__name__)
 IOC = ioc_crawll(
@@ -20,14 +21,65 @@ async def ircRunner():
     pass
 
 
-app.route("/search")
+def checkData(link, query, session):
+    print("running")
+    data = ""
+    try:
+        data = session.get(f"http://{link}")
+    except requests.exceptions.ConnectionError:
+        try:
+            data = session.get(f"https://{link}")
+        except:
+            print(f"{link} is OFFLINE")
+    session.close()
+    if data == "":
+        return None
+    content = str(data.content)
+    print(contains(query, content))
+    if contains(query, content):
+        return link
+    else:
+        return None
+
+
+def contains(string, data):
+    pattern = string.replace(" ", ".*").replace("+", ".*")
+    if not re.search(string=data.lower(), pattern=pattern.lower()):
+        return False
+    else:
+        return True
+
+
+def deepSearch(query):
+    results = []
+    resultSet = IOC.search(query=query)
+    for set in resultSet:
+        if not set:
+            continue
+        print(set[0])
+        if not set[0]:
+            print("nothing")
+            continue
+        futures = []
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(set[0]) // 2
+        ) as executor:
+            for link in set[0]:
+                future = executor.submit(checkData, link, query, IOC.tor_req())
+                futures.append(future)
+            for future in futures:
+                ree = future.result()
+                if ree != None:
+                    results.append(ree)
+    print(results)
+    return results
 
 
 @app.route("/search")
 def search():
     if "q" not in request.args:
         return json.dumps({"message": "pass a string"})
-    results = IOC.search(request.args["q"])
+    results = deepSearch(request.args["q"])
     return json.dumps(results)
 
 

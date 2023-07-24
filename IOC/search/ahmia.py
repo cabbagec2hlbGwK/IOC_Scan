@@ -1,9 +1,9 @@
-import requests, re
+import re
 
 
 def search(IOC, query):
     url = f"https://ahmia.fi/search/?q={query.replace(' ','+')}&d=7"
-    MAX_RESULTS = 10
+    MAX_RESULTS = -1
     session = IOC.tor_req()
 
     headers = {
