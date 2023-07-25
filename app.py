@@ -43,6 +43,7 @@ def checkData(link, query, session):
 
 
 def contains(string, data):
+    string = f".*{string}.*"
     pattern = string.replace(" ", ".*").replace("+", ".*")
     if not re.search(string=data.lower(), pattern=pattern.lower()):
         return False
@@ -61,7 +62,7 @@ def deepSearch(query):
             continue
         futures = []
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=len(set[0]) // 2 + 1
+            max_workers=max(len(set[0]) // 2, 1)
         ) as executor:
             for link in set[0]:
                 future = executor.submit(checkData, link, query, IOC.tor_req())
@@ -79,7 +80,7 @@ def search():
     if "q" not in request.args:
         return json.dumps({"message": "pass a string"})
     results = deepSearch(request.args["q"])
-    if not results:
+    if not results and "debug" in request.args:
         return json.dumps(
             {
                 "message": "No results found",
