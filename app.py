@@ -61,7 +61,7 @@ def deepSearch(query):
             continue
         futures = []
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=len(set[0]) // 2
+            max_workers=len(set[0]) // 2 + 1
         ) as executor:
             for link in set[0]:
                 future = executor.submit(checkData, link, query, IOC.tor_req())
