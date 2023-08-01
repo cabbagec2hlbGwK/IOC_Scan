@@ -5,8 +5,9 @@ import stem.process
 from stem.control import Controller
 from stem.util import term
 import psycopg2
-
-
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 from .search import register
 
 
@@ -22,6 +23,7 @@ class ioc_crawll:
 
     def __del__(self):
         self.torProcess.kill()
+        self.browser.quit()
 
     # table defination
     def initTabel(self, cur):
@@ -38,7 +40,6 @@ class ioc_crawll:
                     word TEXT,
                     status varchar(10) DEFAULT 'ACTIVE')"""
         )
-        # cur.execute("""""")
 
     # setting up the database connection and creating the neccessart table and database
     def initDatabase(self, host, port, user, password):
@@ -176,3 +177,14 @@ class ioc_crawll:
             }
         )
         return session
+
+    # setting up the headless browser
+    def initBrowser(self):
+        fireFoxOptions = webdriver.FirefoxOptions()
+        fireFoxOptions.headless = True
+        fireFoxOptions.proxy
+        brower = webdriver.Firefox(
+            options=fireFoxOptions,
+            service=Service(executable_path=GeckoDriverManager().install()),
+        )
+        self.browser = brower

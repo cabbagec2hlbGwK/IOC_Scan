@@ -1,20 +1,21 @@
 from IOC.IOC_crall import ioc_crawll
 from IOC.ircclient.irc_client import Irc_bot
 from flask import Flask
-import json, asyncio, requests, re
+import json, requests, re, os
 from flask import request
 import concurrent.futures
 
 app = Flask(__name__)
+host = os.getenv("DATABASE_HOST", "localhost")
+user = os.getenv("DATABASE_USER", "postgres")
+password = os.getenv("DATABASE_PASSWORD", "mysecretpassword")
+database_port = os.getenv("DATABASE_PORT", "5432")
 IOC = ioc_crawll(
-    host="localhost",
-    port="5432",
-    user="postgres",
-    password="mysecretpassword",
+    host=host,
+    port=database_port,
+    user=user,
+    password=password,
 )
-# TODO handel the following
-#      handel links, keywords resources
-#      creeate the basic search features for keywords
 
 
 async def ircRunner():
