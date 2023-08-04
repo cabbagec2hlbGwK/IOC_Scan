@@ -1,5 +1,6 @@
 from IOC.IOC_crall import ioc_crawll
 from IOC.ircclient.irc_client import Irc_bot
+from IOC.utils import ransomGroup
 from flask import Flask
 import json, requests, re, os
 from flask import request
@@ -44,8 +45,9 @@ def checkData(link, query, session):
 
 
 def contains(string, data):
-    string = f".*{string}.*"
+    string = f"{string}.*"
     pattern = string.replace(" ", ".*").replace("+", ".*")
+    print(pattern)
     if not re.search(string=data.lower(), pattern=pattern.lower()):
         return False
     else:
@@ -99,6 +101,12 @@ def run():
 @app.route("/irc/register")
 def irc_add():
     pass
+
+
+@app.route("/ransomgroup/list")
+def rangroup_list():
+    ransomGroup.keyword_search(IOC, "test")
+    return json.dumps(ransomGroup.list(IOC))
 
 
 @app.route("/")

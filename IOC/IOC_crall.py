@@ -8,6 +8,7 @@ import psycopg2
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 from .search import register
 
 
@@ -19,11 +20,12 @@ class ioc_crawll:
         # starting tor proxy
         self.port = "9051"
         self.torProcess = self.tor_proxy()
+        self.browser = self.initBrowser()
         self.cur = self.initDatabase(host, port, user, password)
 
     def __del__(self):
         self.torProcess.kill()
-        self.browser.quit()
+        # self.browser.quit()
 
     # table defination
     def initTabel(self, cur):
@@ -39,6 +41,16 @@ class ioc_crawll:
                     id SERIAL PRIMARY KEY,
                     word TEXT,
                     status varchar(10) DEFAULT 'ACTIVE')"""
+        )
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS ransomware_groups (
+            id SERIAL PRIMARY KEY,
+            name varchar(20),
+            link varchar,
+            status varchar(10) DEFAULT 'ACTIVE',
+            CONSTRAINT unique_group_links UNIQUE (name, link)
+        );
+"""
         )
 
     # setting up the database connection and creating the neccessart table and database
@@ -181,10 +193,22 @@ class ioc_crawll:
     # setting up the headless browser
     def initBrowser(self):
         fireFoxOptions = webdriver.FirefoxOptions()
-        fireFoxOptions.headless = True
-        fireFoxOptions.proxy
-        brower = webdriver.Firefox(
+        # fireFoxOptions.headless = True
+        fireFoxOptions.set_preference("network.dns.blockDotOnion", False)
+        fireFoxOptions.set_preference("network.http.sendRefererHeader", 0)
+        fireFoxOptions.set_preference("places.history.enabled", False)
+        fireFoxOptions.set_preference("privacy.clearOnShutdown.offlineApps", True)
+        fireFoxOptions.set_preference("network.cookie.lifetimePolicy", 2)
+        fireFoxOptions.set_preference("network.dns.disablePrefetch", True)
+        fireFoxOptions.set_preference("network.proxy.socks_remote_dns", True)
+        proxy = Proxy()
+        proxy.proxyType = ProxyType.MANUAL
+        proxy.socksProxy = f"127.0.0.1:{self.port}"
+        proxy.socks_version = 5
+        proxy.no_proxy = ["localhost", "172.0.0.1"]
+        fireFoxOptions.proxy = proxy
+        browser = webdriver.Firefox(
             options=fireFoxOptions,
             service=Service(executable_path=GeckoDriverManager().install()),
         )
-        self.browser = brower
+        return browser
