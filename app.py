@@ -11,11 +11,13 @@ host = os.getenv("DATABASE_HOST", "localhost")
 user = os.getenv("DATABASE_USER", "postgres")
 password = os.getenv("DATABASE_PASSWORD", "mysecretpassword")
 database_port = os.getenv("DATABASE_PORT", "5432")
+elasticSearchHost = os.getenv("ELASTIC_SEARCH_HOST", "localhost")
 IOC = ioc_crawll(
     host=host,
     port=database_port,
     user=user,
     password=password,
+    elasticSearchHost=elasticSearchHost,
 )
 
 
@@ -104,9 +106,19 @@ def irc_add():
 
 
 @app.route("/ransomgroup/list")
-def rangroup_list():
-    ransomGroup.keyword_search(IOC, "test")
+def ran_group_list():
+    ransomGroup.update(IOC)
     return json.dumps(ransomGroup.list(IOC))
+
+
+@app.route("/ransomgroup/search")
+def ran_group_search():
+    pass
+
+
+@app.route("/ransomgroup/keyword/search")
+def ran_keyword_search():
+    ransomGroup.keyword_search(IOC, "test")
 
 
 @app.route("/")

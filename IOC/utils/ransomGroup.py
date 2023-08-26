@@ -1,4 +1,4 @@
-import re
+import re, datetime
 
 
 def insert(IOC, group, link):
@@ -38,11 +38,33 @@ def group_search(IOC, name):
 
 
 def keyword_search(IOC, keyword):
+    done = False
     groups = list(IOC=IOC)
     for group in groups:
         link = group[2]
-        IOC.browser.get(link)
-        input()
+        if (
+            link
+            in "http://blogvl7tjyjvsfthobttze52w36wwiz34hrfcmorgvdzb6hikucb7aqd.onion/"
+        ):
+            # done = False
+            print("cjan")
+        if done:
+            continue
+        try:
+            IOC.browser.get(link)
+            data = IOC.browser.page_source
+            document = {
+                "URL": link,
+                "contents": data,
+                "date": datetime.datetime.now().isoformat(),
+            }
+            response = IOC.es.index(index="ransom_groups_data", body=document)
+            if "result" in response and response["result"] == "created":
+                print("Document indexed successfully.")
+            else:
+                print("Document indexing failed.")
+        except Exception as e:
+            pass
 
 
 if __name__ == "__main__":

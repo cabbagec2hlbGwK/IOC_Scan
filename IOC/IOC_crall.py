@@ -10,25 +10,29 @@ from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from .search import register
+from elasticsearch import Elasticsearch
 
 
 # Main class declaration
 class ioc_crawll:
-    def __init__(self, host, port, user, password) -> None:
+    def __init__(self, host, port, user, password, elasticSearchHost) -> None:
+        self.port = "9051"
+        self.elasticSearchHost = elasticSearchHost
+
         # importing search modules
         self.search_engines = self.load_search_modules()
         # starting tor proxy
-        self.port = "9051"
         self.torProcess = self.tor_proxy()
         self.browser = self.initBrowser()
         self.cur = self.initDatabase(host, port, user, password)
+        self.es = self.initElasticSearch()
 
     def __del__(self):
         self.torProcess.kill()
         # self.browser.quit()
 
     # table defination
-    def initTabel(self, cur):
+    def initTabel(self, cur) -> None:
         cur.execute(
             """CREATE TABLE IF NOT EXISTS website(
                     id SERIAL PRIMARY KEY,
@@ -92,6 +96,30 @@ class ioc_crawll:
             )
         return cur
 
+    def initElasticSearch(self):
+        es = Elasticsearch(
+            [f"https://{self.elasticSearchHost}:9200"],
+            verify_certs=False,
+            basic_auth=("elastic", "TESTpAss"),
+        )
+        index_name = "ransom_groups_data"
+        index_body = {
+            "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+            "mappings": {
+                "properties": {
+                    "URL": {"type": "text"},
+                    "contents": {"type": "text"},
+                    "date": {"type": "date"},
+                }
+            },
+        }
+        try:
+            response = es.indices.delete(index=index_name, body=index_body)
+        except:
+            print(f"something went wrong")
+        print("ELASTIC cluster is connected")
+        return es
+
     def load_search_modules(self):
         search_modules = []
         search_dir = os.path.join(os.path.dirname(__file__), "search")
@@ -141,12 +169,6 @@ class ioc_crawll:
 
         return results
 
-    def registerKeyword(self, keyword):
-        pass
-
-    def registerSite(self, site):
-        pass
-
     def tor_proxy(self):
         tor_process = stem.process.launch_tor_with_config(
             config={
@@ -157,11 +179,13 @@ class ioc_crawll:
         )
         return tor_process
 
-    def print_bootstrap_lines(self, line):
+    def print_bootstrap_lines(self, line) -> None:
         print(term.format(line, term.Color.BLUE))
 
     def simple_req(self, query):
-        response = requests.get(query, proxies={"http": "socks5://localhost:9050"})
+        response = requests.get(
+            query, proxies={"http": f"socks5://localhost:{self.port}"}
+        )
         return query
 
     def get_relay_count(self):
@@ -193,7 +217,7 @@ class ioc_crawll:
     # setting up the headless browser
     def initBrowser(self):
         fireFoxOptions = webdriver.FirefoxOptions()
-        # fireFoxOptions.headless = True
+        fireFoxOptions.headless = True
         fireFoxOptions.set_preference("network.dns.blockDotOnion", False)
         fireFoxOptions.set_preference("network.http.sendRefererHeader", 0)
         fireFoxOptions.set_preference("places.history.enabled", False)
@@ -207,8 +231,10 @@ class ioc_crawll:
         proxy.socks_version = 5
         proxy.no_proxy = ["localhost", "172.0.0.1"]
         fireFoxOptions.proxy = proxy
+        print("initing Browser")
         browser = webdriver.Firefox(
             options=fireFoxOptions,
             service=Service(executable_path=GeckoDriverManager().install()),
         )
+        print("browser is running")
         return browser
