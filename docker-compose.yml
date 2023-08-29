@@ -1,3 +1,4 @@
+#⚠️ Not: this is only for dev usage ⚠️
 version: "3"
 services:
   postgres:
