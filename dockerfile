@@ -1,8 +1,11 @@
-FROM python
+FROM selenium/standalone-firefox
 
-WORKDIR /test
+WORKDIR /home/seluser
 COPY ./ .
+USER root
 RUN apt update
-RUN apt install tor -y
+RUN apt install tor python3 pip tar libpq-dev -y
 RUN pip install -r requirements.txt
-RUN python app.py
+RUN chown seluser /home/seluser/* -R
+USER seluser
+CMD ["python3", "app.py"]

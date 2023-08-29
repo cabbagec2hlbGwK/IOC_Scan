@@ -9,5 +9,7 @@ jaraco.collections==4.2.0
 tempora==5.3.0
 flask==2.3.2
 beautifulsoup4==4.11.1
-webdriver-manage==4.0.0
 selenium==4.7.2
+webdriver-manager==4.0.0
+elasticsearch==8.9.0
+loguru

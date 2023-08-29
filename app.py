@@ -12,12 +12,16 @@ user = os.getenv("DATABASE_USER", "postgres")
 password = os.getenv("DATABASE_PASSWORD", "mysecretpassword")
 database_port = os.getenv("DATABASE_PORT", "5432")
 elasticSearchHost = os.getenv("ELASTIC_SEARCH_HOST", "localhost")
+elasticSearchUser = os.getenv("ELASTIC_SEARCH_USER", "test")
+elasticSearchPass = os.getenv("ELASTIC_SEARCH_PASS", "test123456")
 IOC = ioc_crawll(
     host=host,
     port=database_port,
     user=user,
     password=password,
     elasticSearchHost=elasticSearchHost,
+    elasticSearchUser=elasticSearchUser,
+    elasticSearchPass=elasticSearchPass,
 )
 
 

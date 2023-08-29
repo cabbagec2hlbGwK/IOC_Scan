@@ -3,7 +3,6 @@ services:
   postgres:
     image: postgres:latest
     environment:
-      # POSTGRES_DB: mydb
       - POSTGRES_PASSWORD=mysecretpassword
     ports:
       - "5432:5432"
@@ -14,11 +13,37 @@ services:
     image: elasticsearch:8.8.1
     environment:
       - discovery.type=single-node
-      - ELASTIC_USERNAME=elastic
-      - ELASTIC_PASSWORD=TESTpAss
+      - ELASTIC_USERNAME=test
+      - ELASTIC_PASSWORD=test123456
+    command:
+      - elasticsearch-users
+      - useradd
+      - test
+      - -p
+      - test123456
+      - -r
+      - superuser
+      - eswrapper
     ports:
       - "9200:9200"
       - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      # - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+  # IOC_SCAN:
+  #   image: iocs
+  #   environment:
+  #     - DATABASE_HOST=postgres
+  #     - DATABASE_USER=postgres
+  #     - DATABASE_PASSWORD=mysecretpassword
+  #     - DATABASE_PORT=5432
+  #     - ELASTIC_SEARCH_HOST=elasticsearch
+  #     - ELASTIC_SEARCH_USER=elastic
+  #     - ELASTIC_SEARCH_PASS=TESTpAss
+  #   depends_on:
+  #     - postgres
 
 volumes:
   postgres_data:
+  elasticsearch-data:

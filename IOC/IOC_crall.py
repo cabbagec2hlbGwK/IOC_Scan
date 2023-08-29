@@ -1,35 +1,50 @@
 import importlib
-import os, requests
+import os, requests, sys
 import concurrent.futures
+import psycopg2
 import stem.process
+from loguru import logger
 from stem.control import Controller
 from stem.util import term
-import psycopg2
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from .search import register
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, AuthenticationException
+
+# Setting the loging
+logger.add(sys.stdout)
 
 
 # Main class declaration
 class ioc_crawll:
-    def __init__(self, host, port, user, password, elasticSearchHost) -> None:
+    def __init__(
+        self,
+        host,
+        port,
+        user,
+        password,
+        elasticSearchHost,
+        elasticSearchPass,
+        elasticSearchUser,
+    ) -> None:
         self.port = "9051"
         self.elasticSearchHost = elasticSearchHost
+        self.elasticSearchUser = elasticSearchUser
+        self.elasticSearchPass = elasticSearchPass
 
-        # importing search modules
+        # importing search modules and setting up the objects
         self.search_engines = self.load_search_modules()
-        # starting tor proxy
         self.torProcess = self.tor_proxy()
         self.browser = self.initBrowser()
         self.cur = self.initDatabase(host, port, user, password)
         self.es = self.initElasticSearch()
 
     def __del__(self):
-        self.torProcess.kill()
-        # self.browser.quit()
+        self.conn.close()
+        self.browser.quit()
+        self.es.close()
 
     # table defination
     def initTabel(self, cur) -> None:
@@ -59,7 +74,7 @@ class ioc_crawll:
 
     # setting up the database connection and creating the neccessart table and database
     def initDatabase(self, host, port, user, password):
-        print("setting up the database-----------------------------------")
+        logger.info("setting up the database-----------------------------------")
         self.DATABASE = "ioc"
 
         try:
@@ -76,14 +91,21 @@ class ioc_crawll:
             return cur
         except psycopg2.OperationalError:
             # Handeling if the database is not created
-            print("creating database")
-            conn = psycopg2.connect(
-                host=host,
-                port=port,
-                user=user,
-                password=password,
-            )
-            cur = conn.cursor()
+            logger.error("database not found")
+            logger.info("creating database")
+            try:
+                conn = psycopg2.connect(
+                    host=host,
+                    port=port,
+                    user=user,
+                    password=password,
+                )
+                cur = conn.cursor()
+            except Exception as e:
+                logger.critical(f"Can't connect with the database: {e}")
+                del self
+                os._exit(1)
+
             conn.autocommit = True
             cur.execute(f"CREATE DATABASE {self.DATABASE}")
             cur.close()
@@ -100,9 +122,10 @@ class ioc_crawll:
         es = Elasticsearch(
             [f"https://{self.elasticSearchHost}:9200"],
             verify_certs=False,
-            basic_auth=("elastic", "TESTpAss"),
+            # basic_auth=(self.elasticSearchpass, self.elasticSearchuser),
+            http_auth=(self.elasticSearchUser, self.elasticSearchPass),
         )
-        index_name = "ransom_groups_data"
+        index_name = "ransom_groups_data1"
         index_body = {
             "settings": {"number_of_shards": 1, "number_of_replicas": 0},
             "mappings": {
@@ -114,10 +137,15 @@ class ioc_crawll:
             },
         }
         try:
-            response = es.indices.delete(index=index_name, body=index_body)
-        except:
-            print(f"something went wrong")
-        print("ELASTIC cluster is connected")
+            response = es.indices.create(index=index_name, body=index_body)
+            logger.success("Index is created")
+        except AuthenticationException as e:
+            logger.critical(
+                f"The user name or the password is wrong for elasticSearch {e}"
+            )
+        except Exception as e:
+            logger.critical(f"something is wrong with the elastic cluster {e}")
+        logger.info("ELASTIC cluster is connected")
         return es
 
     def load_search_modules(self):
@@ -163,24 +191,29 @@ class ioc_crawll:
                     if searchEngine in register.registered_search_engine:
                         results.append(engine.search(IOC=self, query=query))
                     else:
-                        print("the engine is not registered yet")
+                        logger.debug(f"the engine {searchEngine} is not registered yet")
                 else:
                     pass
 
         return results
 
     def tor_proxy(self):
-        tor_process = stem.process.launch_tor_with_config(
-            config={
-                "SocksPort": self.port,
-                # "ExitNodes": "{US}",
-            },
-            init_msg_handler=self.print_bootstrap_lines,
-        )
+        try:
+            tor_process = stem.process.launch_tor_with_config(
+                config={
+                    "SocksPort": self.port,
+                    # "ExitNodes": "{US}",
+                },
+                init_msg_handler=self.print_bootstrap_lines,
+            )
+        except OSError:
+            tor_process = None
+            logger.error("tor is alredy running")
         return tor_process
 
     def print_bootstrap_lines(self, line) -> None:
-        print(term.format(line, term.Color.BLUE))
+        # print(term.format(line, term.Color.BLUE))
+        logger.info(line)
 
     def simple_req(self, query):
         response = requests.get(
@@ -197,7 +230,7 @@ class ioc_crawll:
                 relay_count = len(circuit.path)
                 return relay_count
         except Exception as e:
-            print("Error: {}".format(e))
+            logger.error(f"{e}")
             return None
 
     def tor_req(self):
@@ -231,10 +264,16 @@ class ioc_crawll:
         proxy.socks_version = 5
         proxy.no_proxy = ["localhost", "172.0.0.1"]
         fireFoxOptions.proxy = proxy
-        print("initing Browser")
-        browser = webdriver.Firefox(
-            options=fireFoxOptions,
-            service=Service(executable_path=GeckoDriverManager().install()),
-        )
-        print("browser is running")
+        logger.info("initing Browser")
+        browser = None
+        try:
+            browser = webdriver.Firefox(
+                options=fireFoxOptions,
+                service=Service(executable_path=GeckoDriverManager().install()),
+            )
+        except Exception as e:
+            logger.critical(f"failed to start the browser : {e}")
+            del self
+            sys.exit(1)
+        logger.success("browser is running")
         return browser
