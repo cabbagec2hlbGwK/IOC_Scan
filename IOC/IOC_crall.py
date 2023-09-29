@@ -120,12 +120,12 @@ class ioc_crawll:
 
     def initElasticSearch(self):
         es = Elasticsearch(
-            [f"https://{self.elasticSearchHost}:9200"],
-            verify_certs=False,
+            [f"http://{self.elasticSearchHost}:9200"],
+            # verify_certs=False,
             # basic_auth=(self.elasticSearchpass, self.elasticSearchuser),
             http_auth=(self.elasticSearchUser, self.elasticSearchPass),
         )
-        index_name = "ransom_groups_data1"
+        index_name = "ransom_groups_data"
         index_body = {
             "settings": {"number_of_shards": 1, "number_of_replicas": 0},
             "mappings": {
@@ -143,8 +143,10 @@ class ioc_crawll:
             logger.critical(
                 f"The user name or the password is wrong for elasticSearch {e}"
             )
+        # except Res
         except Exception as e:
-            logger.critical(f"something is wrong with the elastic cluster {e}")
+            if not "resource_already_exists_exception" in str(e):
+                logger.critical(f"something is wrong with the elastic cluster {e}")
         logger.info("ELASTIC cluster is connected")
         return es
 

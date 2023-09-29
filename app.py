@@ -88,6 +88,9 @@ def deepSearch(query):
 def search():
     if "q" not in request.args:
         return json.dumps({"message": "pass a string"})
+    return json.dumps(
+        {"links": ransomGroup.index_search(IOC=IOC, search_word=request.args["q"])}
+    )
     results = deepSearch(request.args["q"])
     if not results and "debug" in request.args:
         return json.dumps(
@@ -115,14 +118,16 @@ def ran_group_list():
     return json.dumps(ransomGroup.list(IOC))
 
 
-@app.route("/ransomgroup/search")
-def ran_group_search():
-    pass
+@app.route("/ransomgroup/update")
+def ran_group_index():
+    ransomGroup.index_update(IOC=IOC)
+    return json.dumps({"Message": "DONE"})
 
 
 @app.route("/ransomgroup/keyword/search")
 def ran_keyword_search():
-    ransomGroup.keyword_search(IOC, "test")
+    # ransomGroup.keyword_search(IOC, "test")
+    pass
 
 
 @app.route("/")

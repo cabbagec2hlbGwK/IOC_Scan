@@ -1,4 +1,8 @@
-import re, datetime
+import re, datetime, sys
+from loguru import logger
+
+# Setting the loging
+logger.add(sys.stdout)
 
 
 def insert(IOC, group, link):
@@ -37,19 +41,34 @@ def group_search(IOC, name):
     return IOC.cur.fetchall()
 
 
-def keyword_search(IOC, keyword):
+def index_search(IOC, search_word):
+    index_name = "ransom_groups_data"
+    links = []
+    # Search query
+    # search_query = {"query": {"term": {"contents.keyword": search_word.lower()}}}
+    search_query = {"query": {"match": {"contents": search_word}}}
+    # search_query = {"query": {"wildcard": {"contents": f"*{search_word}*"}}}
+
+    try:
+        response = IOC.es.search(index=index_name, body=search_query)
+        hits = response["hits"]["hits"]
+
+        # Print the search results
+        for hit in hits:
+            source = hit["_source"]
+            if source.get("URL", "NULL") not in links:
+                links.append(source.get("URL", "NULL"))
+        return links
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+def index_update(IOC):
     done = False
     groups = list(IOC=IOC)
+    logger.debug(groups)
     for group in groups:
         link = group[2]
-        if (
-            link
-            in "http://blogvl7tjyjvsfthobttze52w36wwiz34hrfcmorgvdzb6hikucb7aqd.onion/"
-        ):
-            # done = False
-            print("cjan")
-        if done:
-            continue
         try:
             IOC.browser.get(link)
             data = IOC.browser.page_source
@@ -60,10 +79,13 @@ def keyword_search(IOC, keyword):
             }
             response = IOC.es.index(index="ransom_groups_data", body=document)
             if "result" in response and response["result"] == "created":
-                print("Document indexed successfully.")
+                logger.success(
+                    f"Document indexed successfully. for ID:{group[0]} name:{group[1]}"
+                )
             else:
                 print("Document indexing failed.")
         except Exception as e:
+            logger.debug(e)
             pass
 
 

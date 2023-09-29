@@ -15,15 +15,8 @@ services:
       - discovery.type=single-node
       - ELASTIC_USERNAME=test
       - ELASTIC_PASSWORD=test123456
-    command:
-      - elasticsearch-users
-      - useradd
-      - test
-      - -p
-      - test123456
-      - -r
-      - superuser
-      - eswrapper
+    command: >
+      bash -c "elasticsearch-users useradd test -p test123456 -r superuser && /bin/tini -- /usr/local/bin/docker-entrypoint.sh"
     ports:
       - "9200:9200"
       - "9300:9300"
