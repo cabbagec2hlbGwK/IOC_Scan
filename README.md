@@ -62,3 +62,8 @@ This is a basic framework to set up a deep web scanning and monitoring solution.
     
 
 **Note:** This is a basic framework, and further customization and hardening are necessary before deploying it in a production environment.
+
+
+https://github.com/cabbagec2hlbGwK/IOC_Scan/assets/83215604/58213f70-c68e-44ce-9e8e-0857df6d42af
+
+
