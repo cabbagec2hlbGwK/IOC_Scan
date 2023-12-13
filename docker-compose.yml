@@ -10,7 +10,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   elasticsearch:
-    image: elasticsearch:8.8.1
+    image: elasticsearch:8.11.1
     environment:
       - discovery.type=single-node
       - ELASTIC_USERNAME=test

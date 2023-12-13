@@ -114,13 +114,13 @@ def irc_add():
 
 @app.route("/ransomgroup/list")
 def ran_group_list():
-    ransomGroup.update(IOC)
     return json.dumps(ransomGroup.list(IOC))
 
 
 @app.route("/ransomgroup/update")
 def ran_group_index():
-    ransomGroup.index_update(IOC=IOC)
+    ransomGroup.update(IOC=IOC)
+    ransomGroup.index_ing(IOC=IOC)
     return json.dumps({"Message": "DONE"})
 
 

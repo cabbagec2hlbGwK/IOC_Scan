@@ -121,7 +121,7 @@ class ioc_crawll:
     def initElasticSearch(self):
         es = Elasticsearch(
             [f"http://{self.elasticSearchHost}:9200"],
-            # verify_certs=False,
+             verify_certs=False,
             # basic_auth=(self.elasticSearchpass, self.elasticSearchuser),
             http_auth=(self.elasticSearchUser, self.elasticSearchPass),
         )
@@ -143,7 +143,7 @@ class ioc_crawll:
             logger.critical(
                 f"The user name or the password is wrong for elasticSearch {e}"
             )
-        # except Res
+        # except Rest
         except Exception as e:
             if not "resource_already_exists_exception" in str(e):
                 logger.critical(f"something is wrong with the elastic cluster {e}")

@@ -1,4 +1,4 @@
-import re, datetime, sys
+import re, datetime, sys, json
 from loguru import logger
 
 # Setting the loging
@@ -12,28 +12,6 @@ def insert(IOC, group, link):
     ON CONFLICT (name, link)
     DO NOTHING;"""
     )
-
-
-def update(IOC):
-    session = IOC.tor_req()
-    data = session.get(
-        "https://ransom.insicurezzadigitale.com/stats.php?page=groups-stats"
-    )
-    pattern = r"data:\s*{\s*labels:\s*\[([^\]]*)\]"
-    match = re.search(pattern, data.text)
-    for group in match.group(1).replace('"', "").split(","):
-        data = session.get(
-            f"https://ransom.insicurezzadigitale.com/stats.php?page=group-profile&group={group}"
-        )
-        pattern = r"https?://(?:[a-zA-Z0-9.-]+\.)?onion(?:/[a-zA-Z0-9./?%&_=-]*)?"
-        links = re.findall(pattern, data.text)
-        for link in links:
-            insert(IOC, group=group, link=link)
-
-
-def list(IOC):
-    IOC.cur.execute("SELECT * FROM ransomware_groups")
-    return IOC.cur.fetchall()
 
 
 def group_search(IOC, name):
@@ -63,30 +41,56 @@ def index_search(IOC, search_word):
         print(f"Error: {e}")
 
 
-def index_update(IOC):
-    done = False
+
+def update(IOC):
+    session = IOC.tor_req()
+    data = json.loads(session.get(
+            "https://raw.githubusercontent.com/joshhighet/ransomwatch/main/groups.json"
+    ).text)
+
+    for group in data:
+        name = group["name"]
+        [insert(IOC=IOC, group = name,link=location["fqdn"]) for location in group["locations"]]
+        print(f"{name} DONE")
+
+
+def list(IOC):
+    IOC.cur.execute("SELECT * FROM ransomware_groups")
+    return IOC.cur.fetchall()
+
+
+
+def index_group(IOC,link):
+    try:
+        IOC.browser.get(link)
+        data = IOC.browser.page_source
+        document = {
+            "URL": link,
+            "contents": data,
+            "date": datetime.datetime.now().isoformat(),
+        }
+        response = IOC.es.index(index="ransom_groups_data", body=document)
+        if "result" in response and response["result"] == "created":
+            logger.success(f"{link} indexed successfully.")
+        else:
+            logger.warning("{link} indexing failed.")
+        return True
+    except Exception as e:
+        logger.info(e)
+        return False
+
+def index_ing(IOC):
     groups = list(IOC=IOC)
-    logger.debug(groups)
+    done = True
     for group in groups:
         link = group[2]
-        try:
-            IOC.browser.get(link)
-            data = IOC.browser.page_source
-            document = {
-                "URL": link,
-                "contents": data,
-                "date": datetime.datetime.now().isoformat(),
-            }
-            response = IOC.es.index(index="ransom_groups_data", body=document)
-            if "result" in response and response["result"] == "created":
-                logger.success(
-                    f"Document indexed successfully. for ID:{group[0]} name:{group[1]}"
-                )
-            else:
-                print("Document indexing failed.")
-        except Exception as e:
-            logger.debug(e)
-            pass
+        if link == "7k4yyskpz3rxq5nyokf6ztbpywzbjtdfanweup3skctcxopmt7tq7eid.onion":
+            done = False
+        if done:
+            continue
+        print(link)
+        if not index_group(IOC, link=f"https://{link}") :
+            _ = index_group(IOC,link=f"http://{link}")
 
 
 if __name__ == "__main__":
